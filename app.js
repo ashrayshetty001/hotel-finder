@@ -20,24 +20,34 @@ app.get('/', (req, res) => {
     res.send('Hi i am root');
 });
 
-app.get('/testlisting',async (req,res)=>{
-    const sampleListing = new Listing({
-        title:'White Mansion',
-        description:'A white mansion with a pool',
-        image:'',
-        price:1000000,
-        location:'New York',
-        country:'USA',
-    })
-    await sampleListing.save();
-    console.log("sampleListing successfull");
-    res.send("sampleListing successfull");
+//new route
+app.get('/listings/new',(req,res)=>{
+    res.render('listings/new.ejs');
+})
 
+//create route
+app.post('/listings',async (req,res)=>{
+    const newListing=req.body.listing;
+    newListing.save();
+    res.redirect("/listings");
+    
+})
+
+
+//show route
+app.get('/listings/:id',async (req,res)=>{
+    const {id} = req.params;
+    const listing = await Listing.findById(id);
+    if (!listing) {
+        return res.status(404).send('Listing not found');
+    }
+    else{res.render('listings/show.ejs',{listing});}
+    
 })
 
 app.get('/alllistings',async (req,res)=>{
     const allListings = await Listing.find({});
-    res.render('listings/index',{allListings});
+    res.render('listings/index.ejs',{allListings});
 })
 
 app.listen(8080, () => {
