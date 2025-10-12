@@ -5,9 +5,8 @@ const Listing = require("../models/listing.js");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 const listingcontroller = require("../controllers/listings.js");
 const multer = require("multer");
-const {storage} = require("../cloudConfig.js");
-const { get } = require("http");
-const upload =multer({storage});
+// Use in-memory storage to allow running without Cloudinary
+const upload = multer({ storage: multer.memoryStorage() });
 
 //Index Route.get()
 router
@@ -20,23 +19,14 @@ router
   wrapAsync(listingcontroller.createListing)
 );
 
-
 // New route
 router.get("/new", isLoggedIn, listingcontroller.renderNewForm);
 
 
 
 //  Create route
-router.post(
-  "/",
-  isLoggedIn,
-   validateListing, wrapAsync(listingcontroller.createListing)
-);
+// Removed duplicate POST "/" route; creation is handled in the .route("/") chain above
 
-// Show route
-router.get("/:id", wrapAsync(listingcontroller.showListing)
-
-);
 
 // Edit route
 router.get(
@@ -64,10 +54,6 @@ router
 );
 
 // Delete route
-router.delete(
-  "/:id", 
-  isLoggedIn,
-  isOwner,
-  wrapAsync(listingcontroller.destroyListing)
-);
+// Removed duplicate standalone DELETE route; kept the delete in the .route(":id") chain
+
 module.exports = router;

@@ -20,7 +20,8 @@ const LocalStrategy = require("passport-local");
 const UserRouter   = require("./routes/user.js");
 const User = require("./models/user.js");
 
-const dbUrl = process.env.ATLASDB_URL;
+const dbUrl = process.env.ATLASDB_URL || 'mongodb://127.0.0.1:27017/delta';
+const sessionSecret = process.env.SECRET || 'thisshouldbeabettersecret';
 
 main()
   .then((res) => {
@@ -45,18 +46,18 @@ app.use(express.static(path.join(__dirname, "/public")));
 const store = MongoStore.create({
   mongoUrl: dbUrl,
   crypto: {
-    secret: process.env.SECRET,
+    secret: sessionSecret,
   },
   touchAfter: 24 *3600,
 });
-store.on("error",  ()  =>{
+store.on("error",  (err)  =>{
   console.log("ERROR in MONGO SESSION STORE", err);
 });
 
 
 const sessionOptions = {
   store,
-  secret: process.env.SECRET,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -88,13 +89,25 @@ app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", UserRouter);
 
+// Root redirect
+app.get('/', (req, res) => {
+  res.redirect('/listings');
+});
+
+// 404 for unmatched routes
+app.all('*', (req, res, next) => {
+  next(new ExpressError(404, 'Page Not Found'));
+});
+
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  const { statusCode = 500, message = "Something went wrong" } = err;
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Something went wrong";
   res.status(statusCode).render("error.ejs", { message, statusCode });
 });
 
 // Start Server
-app.listen(5050, () => {
-  console.log("Server is running on port 5050");
+const PORT = process.env.PORT || 5050;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
